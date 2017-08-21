@@ -139,3 +139,57 @@ model.summary()
 
 
 model.fit(train_images, train_labels,batch_size=batch_size,epochs=nb_epoch,shuffle=True,verbose=1,validation_data=(test_images, test_labels))
+
+model.save('ApparelVGG16.h5')
+
+sgd = SGD(lr=1e-3, decay=1e-6, momentum=0.9, nesterov=True)
+model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+
+model.summary()
+
+model.fit(train_images, train_labels,batch_size=batch_size,epochs=nb_epoch,shuffle=True,verbose=1,validation_data=(test_images, test_labels))
+
+model.save('ApparelVGG16V2.h5')
+
+model.summary()
+
+outputs = model.get_layer('flatten').output
+inputs = model.input 
+
+intermediate_layer_model = Model (inputs,outputs)
+
+intermediate_layer_model.summary()
+
+#Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc_X = StandardScaler()
+#X_train = sc_X.fit_transform(X_train)
+#X_test = sc_X.transform(X_test)
+
+result = sc_X.fit_transform(intermediate_layer_model.predict(train_images))
+
+#test_result = sc_X.transform(intermediate_layer_model.predict(test_image))
+
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=None)
+
+result = pca.fit_transform (result)
+
+explain = pca.explained_variance_ratio_
+
+#test_result = pca.transform(test_result)
+
+from sklearn.neighbors import NearestNeighbors
+
+nbrs = NearestNeighbors(n_neighbors=3, algorithm='ball_tree').fit(result)
+
+#distances,indices = nbrs.kneighbors(test_result)
+
+from sklearn.externals import joblib
+
+filename = 'neighbourModel.pkl'
+
+joblib.dump(nbrs,filename)
+
+
